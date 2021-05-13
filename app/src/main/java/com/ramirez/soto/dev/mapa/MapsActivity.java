@@ -1,20 +1,20 @@
 package com.ramirez.soto.dev.mapa;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
-import android.location.Location;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.Toast;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -22,20 +22,18 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerDragListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {//, GoogleMap.OnMarkerDragListener {
 
     private GoogleMap mMap;
     private Geocoder geocoder;
     private List<Address> address;
     private double[][] Puntos_array = {{19.031593719530207, -98.20960414711624},{19.033627889375683, -98.20800018621611},{19.03287736030919, -98.20560765575259}};
+    private String[][] info_u ={{"primera ubicacion", "9:00"},{"segunda ubicacion", "10:00"},{"Prueba","10:30"}};
     //*****************************  PERMISO PARA UBICACIONES    ***********************************
 
     private static final String TAG = "**************Mapa";
@@ -99,6 +97,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });*/
 
         mMap.clear();
+        for (int i =0; i<Puntos_array.length; i++){
+            Agregar_Viajes_Encontrados(new LatLng(Puntos_array[i][0],Puntos_array[i][1]),DEFAULT_ZOOM, info_u[i][0], info_u[i][1],i);
+        }
         //Inicializar_Autocompletador();
         /*CameraPosition camera =new CameraPosition.Builder()
                 .target(sydney)
@@ -111,7 +112,97 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
 
-    private void Obtener_Ubicacion_Dispositivo()
+    private void Agregar_Viajes_Encontrados(LatLng latLng, float zoom, String title, String hora, int index)
+    {
+        MarkerOptions mark = new MarkerOptions().position(latLng).draggable(true);
+
+        Marker Nuevo_Marcador = mMap.addMarker(mark);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+        geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
+
+
+        Nuevo_Marcador.setTag((Object)index);
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener()
+        {
+            @Override
+            public boolean onMarkerClick(Marker marker)
+            {
+                final int temp = (int)marker.getTag();
+                System.err.println("AQui"+ temp);
+                AlertDialog.Builder Ventada_info = new AlertDialog.Builder(MapsActivity.this);
+                View vista_alerta = getLayoutInflater().inflate(R.layout.elemento_dialog_mapa,null); // VINCULAMOS VISTA **************
+                Ventada_info.setView(vista_alerta);
+                final AlertDialog vista_Viaje = Ventada_info.create();
+
+                TextView Campo_titulo = (TextView) vista_alerta.findViewById(R.id.titulo_id);
+                TextView Campo_hora = (TextView) vista_alerta.findViewById(R.id.hora_id);
+                ImageView Campo_foto = vista_alerta.findViewById(R.id.foto_id); ;
+                Campo_titulo.setTextColor(Color.WHITE);
+                Campo_hora.setTextColor(Color.WHITE);
+
+                Campo_titulo.setText(title);
+                System.out.println(title);
+                Campo_hora.setText(hora);
+                if( temp == 0)
+                { Campo_foto.setImageResource(R.drawable.im1);}
+                else if (temp == 1)
+                { Campo_foto.setImageResource(R.drawable.img2);}
+                else if (temp == 2)
+                { Campo_foto.setImageResource(R.drawable.img3);}
+                vista_Viaje.show();
+
+
+                return false;
+            }
+        });
+        /*
+            mark.icon(BitmapDescriptorFactory.fromResource(R.drawable.box4));
+            Marker Nuevo_Marcador = mMap.addMarker(mark);
+            Nuevo_Marcador.setTag(index);
+        System.out.println("*******************************"+index);
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+            geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
+
+            //System.out.println(title);
+
+            //Nuevo_Marcador.showInfoWindow();
+
+            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener()
+            {
+                @Override
+                public boolean onMarkerClick(Marker marker)
+                {
+                    int n = (int) Nuevo_Marcador.getTag();
+
+                    AlertDialog.Builder Ventada_info = new AlertDialog.Builder(MapsActivity.this);
+                    View vista_alerta = getLayoutInflater().inflate(R.layout.elemento_dialog_mapa,null); // VINCULAMOS VISTA **************
+                    Ventada_info.setView(vista_alerta);
+                    final AlertDialog vista_Viaje = Ventada_info.create();
+
+                    TextView Campo_titulo = (TextView) vista_alerta.findViewById(R.id.titulo_id);
+                    TextView Campo_hora = (TextView) vista_alerta.findViewById(R.id.hora_id);
+                    ImageView Campo_foto = vista_alerta.findViewById(R.id.foto_id); ;
+
+                    Campo_titulo.setText(title);
+                    System.out.println(title);
+                    Campo_hora.setText(hora);
+                    if (title.equals("primera ubicacion"))
+                    { Campo_foto.setImageResource(R.drawable.im1);}
+                    else if (title.equals("segunda ubicacion"))
+                    { Campo_foto.setImageResource(R.drawable.img2);}
+                    else if (title.equals("Prueba"))
+                    { Campo_foto.setImageResource(R.drawable.img3);}
+                    vista_Viaje.show();
+
+                    //***************************************************************************************************************************************************************
+                 return false;
+                }
+            });*/
+       // }
+
+    }
+
+    /*private void Obtener_Ubicacion_Dispositivo()
     {
         Log.d(TAG, "getDeviceLocation: getting the devices current location");
 
@@ -152,18 +243,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             });
         }
         catch (SecurityException e){ Log.e(TAG, "getDeviceLocation: SecurityException: " + e.getMessage() ); }
-    }
+    }*/
 
-    private void Agregar_Nueva_Ubicacion_Mapa(LatLng latLng, float zoom, String title)
+   /* private void Agregar_Nueva_Ubicacion_Mapa(LatLng latLng, float zoom, String title)
     {
         //Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude );
         mMap.addMarker(new MarkerOptions().position(latLng).title(title).draggable(true));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
         mMap.setOnMarkerDragListener(this);
         geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
-    }
+    }*/
 
-    @Override
+  /*  @Override
     public void onMarkerDragStart(Marker marker) {
        // autocompleteFragment.a.setText("Buscando...");
     }
@@ -175,7 +266,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onMarkerDragEnd(Marker marker) {
-        double lat = marker.getPosition().latitude;
+        /* double lat = marker.getPosition().latitude;
         double lng = marker.getPosition().longitude;
 
         try
@@ -194,7 +285,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         System.out.print("["+ Lat+ ","+ Longi+"],"+"Dir: "+Direccion);
         //autocompleteFragment.a.setText(Direccion);
 
-
+         */
         /*
 
         String mensaje ="{Latitud: ["+direccion.getLatitude()+"]\n"+
@@ -205,7 +296,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Mensaje_CuadroDialogo("Encontrado", mensaje, "ok");*/
 
         //Log.d(TAG, "Movi el marker: "+mensaje+"");
-    }
+   // }*/
 
     /*private void Inicializar_Autocompletador()
     {
